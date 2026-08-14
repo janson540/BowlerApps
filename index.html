@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>Lane 22</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lane 22">
+<meta name="theme-color" content="#111110">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%231a1a19'/%3E%3Cg fill='%23fcfcfb'%3E%3Ccircle cx='54' cy='52' r='11'/%3E%3Ccircle cx='78' cy='52' r='11'/%3E%3Ccircle cx='102' cy='52' r='11'/%3E%3Ccircle cx='126' cy='52' r='11'/%3E%3Ccircle cx='66' cy='80' r='11'/%3E%3Ccircle cx='90' cy='80' r='11'/%3E%3Ccircle cx='114' cy='80' r='11'/%3E%3Ccircle cx='78' cy='108' r='11'/%3E%3Ccircle cx='102' cy='108' r='11'/%3E%3Ccircle cx='90' cy='136' r='11'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root{
+    color-scheme: dark;
+    --surface-0:#111110; --surface-1:#1a1a19; --surface-2:#232322; --surface-3:#2e2e2c;
+    --line:#333331; --line-strong:#45443f;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --bad:#e66767; --warn:#c98500;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--surface-0); color:var(--text-primary);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px; line-height:1.45; -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none; user-select:none;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app{max-width:520px; margin:0 auto; min-height:100%; display:flex; flex-direction:column}
+  .view{display:none; flex:1; flex-direction:column; padding:14px 14px 18px}
+  .view.on{display:flex}
+
+  .bar{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 2px 12px}
+  .bar h1{font-size:16px; margin:0; font-weight:600; letter-spacing:-.01em}
+  .bar .meta{font-size:12.5px; color:var(--text-muted)}
+  .iconbtn{background:var(--surface-2); border:1px solid var(--line); color:var(--text-secondary);
+    border-radius:9px; font-size:13px; padding:7px 12px; font-family:inherit; cursor:pointer}
+  .iconbtn:active{background:var(--surface-3)}
+
+  /* frame strip */
+  .strip{display:flex; gap:3px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none}
+  .strip::-webkit-scrollbar{display:none}
+  .f{flex:0 0 auto; width:46px; background:var(--surface-1); border:1px solid var(--line);
+     border-radius:7px; overflow:hidden; transition:border-color .15s}
+  .f.cur{border-color:var(--s1); box-shadow:0 0 0 1px var(--s1)}
+  .f .n{font-size:9.5px; color:var(--text-muted); text-align:center; background:var(--surface-2); padding:1px 0}
+  .f .bl{display:flex; height:24px}
+  .f .bl span{flex:1; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:600; border-right:1px solid var(--line)}
+  .f .bl span:last-child{border-right:none}
+  .f .bl .x{color:var(--s1)} .f .bl .sp{color:var(--s3)} .f .bl .ms{color:var(--text-muted)}
+  .f .bl .spl{color:var(--bad)}
+  .f .tot{text-align:center; font-size:14px; font-weight:650; padding:3px 0;
+    border-top:1px solid var(--line); font-variant-numeric:tabular-nums; min-height:24px}
+  .f.wide{width:64px}
+
+  .scoreline{display:flex; align-items:baseline; gap:10px; padding:4px 2px 10px}
+  .scoreline .big{font-size:34px; font-weight:650; letter-spacing:-.02em; line-height:1}
+  .scoreline .lab{font-size:12.5px; color:var(--text-muted)}
+
+  /* pin deck */
+  .deckwrap{flex:1; display:flex; flex-direction:column; justify-content:center; min-height:0}
+  .prompt{text-align:center; font-size:14.5px; color:var(--text-secondary); margin-bottom:4px}
+  .prompt b{color:var(--text-primary)}
+  .splitflag{text-align:center; min-height:22px; font-size:12.5px; margin-bottom:2px}
+  .splitflag button{background:none; border:1px dashed var(--line-strong); color:var(--text-muted);
+    font:inherit; font-size:12px; padding:2px 10px; border-radius:99px; cursor:pointer}
+  .splitflag button.on{border-style:solid; border-color:var(--bad); color:var(--bad); font-weight:600}
+  .deck{position:relative; width:100%; max-width:300px; margin:6px auto 0; aspect-ratio:1/1.02}
+  .pin{position:absolute; width:19%; aspect-ratio:1/1; transform:translate(-50%,-50%);
+    border-radius:50%; border:2px solid var(--line-strong); background:transparent;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer;
+    transition:background .12s, border-color .12s, color .12s, transform .08s; font-family:inherit}
+  .pin.up{background:var(--text-primary); border-color:var(--text-primary); color:var(--surface-0)}
+  .pin.gone{opacity:.22; pointer-events:none}
+  .pin:active{transform:translate(-50%,-50%) scale(.9)}
+
+  .actions{display:flex; flex-direction:column; gap:8px; padding-top:14px}
+  .primary{width:100%; padding:16px; border-radius:13px; border:none; background:var(--s1); color:#fff;
+    font-family:inherit; font-size:17px; font-weight:650; cursor:pointer; letter-spacing:-.01em}
+  .primary:active{filter:brightness(.9)}
+  .primary.strike{background:var(--s1)} .primary.spare{background:var(--s3)}
+  .primary.count{background:var(--surface-3); color:var(--text-primary)}
+  .row{display:flex; gap:8px}
+  .row button{flex:1; padding:11px; border-radius:11px; background:var(--surface-2);
+    border:1px solid var(--line); color:var(--text-secondary); font-family:inherit; font-size:14px; cursor:pointer}
+  .row button:active{background:var(--surface-3)}
+
+  /* setup + data */
+  label{display:block; font-size:12.5px; color:var(--text-secondary); margin:14px 0 5px}
+  input{width:100%; padding:12px 13px; border-radius:11px; background:var(--surface-1);
+    border:1px solid var(--line-strong); color:var(--text-primary); font-family:inherit; font-size:16px}
+  .card{background:var(--surface-1); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:10px}
+  .card h3{margin:0 0 3px; font-size:14px; font-weight:600}
+  .card p{margin:0; font-size:12.5px; color:var(--text-muted)}
+  .sesrow{display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:11px 0; border-bottom:1px solid var(--line)}
+  .sesrow:last-child{border-bottom:none}
+  .sesrow .l{font-size:14px} .sesrow .r{font-size:13px; color:var(--text-muted); font-variant-numeric:tabular-nums}
+  .sesrow .sub{font-size:12px; color:var(--text-muted)}
+  .tag{font-size:10px; padding:2px 7px; border-radius:99px; background:var(--surface-3); color:var(--text-muted); margin-left:6px}
+  .stats{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:11px; overflow:hidden; margin-bottom:12px}
+  .stat{background:var(--surface-1); padding:12px 13px}
+  .stat .k{font-size:11.5px; color:var(--text-muted)} .stat .v{font-size:21px; font-weight:640; margin-top:2px}
+  .hint{font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.5}
+  .toast{position:fixed; left:50%; bottom:32px; transform:translateX(-50%) translateY(10px);
+    background:var(--surface-3); border:1px solid var(--line-strong); color:var(--text-primary);
+    padding:11px 17px; border-radius:11px; font-size:13.5px; opacity:0; transition:.2s; pointer-events:none; z-index:99; max-width:88%}
+  .toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ============ SETUP ============ -->
+<section class="view on" id="vSetup">
+  <div class="bar"><h1>New session</h1><button class="iconbtn" onclick="go('vData')">Data</button></div>
+  <label for="iDate">Date</label><input type="date" id="iDate">
+  <label for="iHouse">House</label><input type="text" id="iHouse" placeholder="Holiday Bowl">
+  <label for="iLane">Lane</label><input type="number" id="iLane" inputmode="numeric" placeholder="22">
+  <div style="flex:1"></div>
+  <button class="primary" style="margin-top:18px" onclick="startSession()">Start bowling</button>
+  <div class="hint">Tap the pins <b>left standing</b> after each ball. Splits are detected automatically from the pin positions — tap the flag to override. Everything is stored on this device; export when the block is done.</div>
+</section>
+
+<!-- ============ BOWL ============ -->
+<section class="view" id="vBowl">
+  <div class="bar">
+    <div><h1 id="bTitle">Game 1</h1><div class="meta" id="bMeta"></div></div>
+    <button class="iconbtn" onclick="go('vData')">Done</button>
+  </div>
+  <div class="strip" id="strip"></div>
+  <div class="scoreline"><div class="big" id="liveScore">0</div><div class="lab" id="livePace"></div></div>
+  <div class="deckwrap">
+    <div class="prompt" id="prompt"></div>
+    <div class="splitflag" id="splitflag"></div>
+    <div class="deck" id="deck"></div>
+  </div>
+  <div class="actions">
+    <button class="primary" id="btnPrimary" onclick="commitBall()"></button>
+    <div class="row">
+      <button onclick="undo()">Undo</button>
+      <button onclick="resetPins()">Clear pins</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DATA ============ -->
+<section class="view" id="vData">
+  <div class="bar"><h1>Sessions</h1><button class="iconbtn" onclick="go(state.session?'vBowl':'vSetup')">Back</button></div>
+  <div class="stats" id="allStats"></div>
+  <div class="card" id="sesList"></div>
+  <div class="row" style="margin-bottom:8px">
+    <button onclick="exportData()">Export JSON</button>
+    <button onclick="document.getElementById('fImport').click()">Import</button>
+  </div>
+  <input type="file" id="fImport" accept="application/json,.json" style="display:none" onchange="importData(event)">
+  <button class="primary" onclick="newSession()">New session</button>
+  <div class="hint" id="dataHint"></div>
+</section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== CORE ===================== */
+/* ---- Core logic shared by the tracker app and the node test harness ---- */
+
+/* Pin rack neighbours. 2 and 3 are deliberately NOT adjacent — the headpin sits
+   between them, so a 2-3 leave registers as a split. Edge cases are overridable
+   in the UI. */
+const ADJ = {
+  1: [2, 3], 2: [1, 4, 5], 3: [1, 5, 6],
+  4: [2, 5, 7, 8], 5: [2, 3, 4, 6, 8, 9], 6: [3, 5, 9, 10],
+  7: [4, 8], 8: [4, 5, 7, 9], 9: [5, 6, 8, 10], 10: [6, 9]
+};
+
+/* A split: headpin down, two or more pins standing, and the standing pins do not
+   form a single connected cluster. */
+function isSplit(standing) {
+  if (!standing || standing.length < 2) return false;
+  if (standing.includes(1)) return false;
+  const set = new Set(standing), seen = new Set(), stack = [standing[0]];
+  while (stack.length) {
+    const p = stack.pop();
+    if (seen.has(p)) continue;
+    seen.add(p);
+    (ADJ[p] || []).forEach(q => { if (set.has(q) && !seen.has(q)) stack.push(q); });
+  }
+  return seen.size < standing.length;
+}
+
+function scoreGame(throws) {
+  const balls = [];
+  throws.forEach(f => f.forEach(b => balls.push(b)));
+  const running = [];
+  let total = 0, bi = 0;
+  for (let frame = 0; frame < 10; frame++) {
+    if (frame < 9) {
+      if (balls[bi] === undefined) { running.push(null); continue; }
+      if (balls[bi] === 10) {
+        if (balls[bi + 1] === undefined || balls[bi + 2] === undefined) { running.push(null); continue; }
+        total += 10 + balls[bi + 1] + balls[bi + 2]; bi += 1;
+      } else if (balls[bi + 1] === undefined) { running.push(null); continue; }
+      else if (balls[bi] + balls[bi + 1] === 10) {
+        if (balls[bi + 2] === undefined) { running.push(null); continue; }
+        total += 10 + balls[bi + 2]; bi += 2;
+      } else { total += balls[bi] + balls[bi + 1]; bi += 2; }
+    } else {
+      if (balls[bi] === undefined) { running.push(null); continue; }
+      const need = (balls[bi] === 10 || balls[bi] + (balls[bi + 1] || 0) === 10) ? 3 : 2;
+      if (balls.length - bi < need) { running.push(null); continue; }
+      for (let k = bi; k < balls.length; k++) total += balls[k];
+    }
+    running.push(total);
+  }
+  return running;
+}
+
+/* How many balls the 10th frame is entitled to, given what's been thrown. */
+function tenthBallsAllowed(f) {
+  if (f.length === 0) return 3;
+  if (f[0] === 10) return 3;
+  if (f.length >= 2 && f[0] + f[1] === 10) return 3;
+  return 2;
+}
+
+function rackAttempts(throws) {
+  const out = [];
+  for (let fi = 0; fi < throws.length && fi < 10; fi++) {
+    const f = throws[fi];
+    if (fi < 9) {
+      if (f[0] === 10) out.push({ frame: fi + 1, first: 10, leave: 0, result: 'strike' });
+      else if (f.length >= 2) out.push({
+        frame: fi + 1, first: f[0], leave: 10 - f[0],
+        result: (f[0] + f[1] === 10) ? 'spare' : 'open', second: f[1]
+      });
+    } else {
+      let i = 0;
+      while (i < f.length) {
+        if (f[i] === 10) { out.push({ frame: 10, first: 10, leave: 0, result: 'strike' }); i += 1; }
+        else if (i + 1 < f.length) {
+          const made = f[i] + f[i + 1] === 10;
+          out.push({ frame: 10, first: f[i], leave: 10 - f[i], result: made ? 'spare' : 'open', second: f[i + 1] });
+          i += 2;
+        } else { out.push({ frame: 10, first: f[i], leave: 10 - f[i], result: 'fill' }); i += 1; }
+      }
+    }
+  }
+  return out;
+}
+
+/* ---- Merge: reconcile app-entered sessions with PDF-parsed ones ---- */
+function sessionKey(s) {
+  return [s.date, (s.house || '').toLowerCase().replace(/\s+/g, ''), s.lane == null ? '' : s.lane].join('|');
+}
+function richness(s) {
+  // a session carrying pin-level leaves beats one that only has counts
+  return s.games.reduce((n, g) => n + Object.keys(g.leaves || {}).length, 0);
+}
+function mergeSessions(existing, incoming) {
+  const byKey = new Map();
+  const log = [];
+  existing.forEach(s => byKey.set(sessionKey(s), s));
+  incoming.forEach(s => {
+    const k = sessionKey(s);
+    if (!byKey.has(k)) { byKey.set(k, s); log.push({ action: 'added', key: k, source: s.source }); return; }
+    const cur = byKey.get(k);
+    if (richness(s) > richness(cur)) {
+      byKey.set(k, s);
+      log.push({ action: 'replaced', key: k, from: cur.source, to: s.source, reason: 'incoming has pin-level data' });
+    } else if (s.games.length > cur.games.length) {
+      byKey.set(k, s);
+      log.push({ action: 'replaced', key: k, from: cur.source, to: s.source, reason: 'incoming has more games' });
+    } else {
+      log.push({ action: 'skipped', key: k, reason: 'already present, not richer' });
+    }
+  });
+  const merged = [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return { sessions: merged, log };
+}
+
+
+
+
+/* ===================== STATE ===================== */
+const LS = 'bowlingTracker.v1';
+/* Rack geometry, inset from the container edge so the back row clears the label
+   above it and the outside pins aren't clipped. Even 26.67% gaps keep the real
+   4-3-2-1 offset: pin 8 sits directly behind pin 2, pin 5 behind pin 1. */
+const PINPOS = { 7:[10,8], 8:[36.7,8], 9:[63.3,8], 10:[90,8],
+                 4:[23.3,34], 5:[50,34], 6:[76.7,34],
+                 2:[36.7,60], 3:[63.3,60], 1:[50,86] };
+
+let store = { sessions: [] };
+let state = { session: null, gi: 0, standing: [], selected: [], ballIdx: 0, splitOverride: null };
+
+function load() { try { const r = localStorage.getItem(LS); if (r) store = JSON.parse(r); } catch (e) {} }
+function save() { try { localStorage.setItem(LS, JSON.stringify(store)); } catch (e) { toast('Storage unavailable — export before closing'); } }
+function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600); }
+function go(v) { document.querySelectorAll('.view').forEach(x => x.classList.remove('on')); document.getElementById(v).classList.add('on'); if (v === 'vData') renderData(); }
+const $ = s => document.getElementById(s);
+
+/* ===================== SESSION FLOW ===================== */
+function newSession() {
+  $('iDate').value = new Date().toISOString().slice(0, 10);
+  const last = store.sessions[store.sessions.length - 1];
+  if (last) { $('iHouse').value = last.house || ''; $('iLane').value = last.lane || ''; }
+  go('vSetup');
+}
+function startSession() {
+  const date = $('iDate').value || new Date().toISOString().slice(0, 10);
+  const s = {
+    id: 's-' + date + '-' + Math.random().toString(36).slice(2, 7),
+    date, house: $('iHouse').value.trim() || 'Unknown', lane: +$('iLane').value || null,
+    source: 'app', games: []
+  };
+  store.sessions.push(s); state.session = s; state.gi = 0;
+  s.games.push(newGame(1));
+  save(); startFrame(); go('vBowl');
+}
+function newGame(n) { return { game: n, throws: [], splits: [], leaves: {} }; }
+function curGame() { return state.session.games[state.gi]; }
+
+function startFrame() {
+  const g = curGame();
+  state.standing = [1,2,3,4,5,6,7,8,9,10];
+  state.selected = [];
+  state.ballIdx = 0;
+  state.splitOverride = null;
+  if (!g.throws[g.throws.length - 1] || g.throws[g.throws.length - 1]._done) g.throws.push([]);
+  render();
+}
+
+/* ===================== ENTRY ===================== */
+function togglePin(p) {
+  if (!state.standing.includes(p)) return;
+  const i = state.selected.indexOf(p);
+  if (i >= 0) state.selected.splice(i, 1); else state.selected.push(p);
+  state.splitOverride = null;
+  render();
+}
+function resetPins() { state.selected = []; state.splitOverride = null; render(); }
+
+function commitBall() {
+  const g = curGame();
+  const fi = g.throws.length - 1;
+  const knocked = state.standing.length - state.selected.length;
+  const f = g.throws[fi];
+  f.push(knocked);
+
+  // record the leave (pins standing after the frame's opening ball)
+  if (f.length === 1 && knocked < 10) g.leaves[fi + 1] = [...state.selected].sort((a, b) => a - b);
+  if (f.length === 1) {
+    const spl = state.splitOverride !== null ? state.splitOverride : isSplit(state.selected);
+    if (spl && !g.splits.includes(fi + 1)) g.splits.push(fi + 1);
+  }
+
+  const stillUp = [...state.selected];
+  const tenth = fi === 9;
+
+  if (!tenth) {
+    if (knocked === 10 && f.length === 1) { closeFrame(); return; }   // strike
+    if (f.length >= 2) { closeFrame(); return; }                       // frame over
+    state.standing = stillUp; state.selected = []; state.ballIdx = 1; state.splitOverride = null;
+  } else {
+    const allowed = tenthBallsAllowed(f);
+    if (f.length >= allowed) { closeFrame(); return; }
+    // rack resets after a strike or a spare in the 10th
+    const justCleared = stillUp.length === 0;
+    state.standing = justCleared ? [1,2,3,4,5,6,7,8,9,10] : stillUp;
+    state.selected = []; state.ballIdx = f.length; state.splitOverride = null;
+  }
+  save(); render();
+}
+
+function closeFrame() {
+  const g = curGame();
+  const fi = g.throws.length - 1;
+  g.throws[fi]._done = true;
+  save();
+  if (fi >= 9) { finishGame(); return; }
+  startFrame();
+}
+
+function finishGame() {
+  const g = curGame();
+  g.printed_total = scoreGame(g.throws.map(f => [...f])).slice(-1)[0];
+  save();
+  const next = confirm(`Game ${g.game} complete — ${g.printed_total}.\n\nBowl another game?`);
+  if (next) { state.session.games.push(newGame(g.game + 1)); state.gi++; save(); startFrame(); render(); }
+  else { toast('Session saved. Export it when you’re ready.'); go('vData'); }
+}
+
+function undo() {
+  const g = curGame();
+  let fi = g.throws.length - 1;
+  let f = g.throws[fi];
+  if (f.length === 0) {
+    if (fi === 0) { toast('Nothing to undo'); return; }
+    g.throws.pop(); fi--; f = g.throws[fi]; delete f._done;
+  }
+  f.pop();
+  delete f._done;
+  delete g.leaves[fi + 1];
+  const si = g.splits.indexOf(fi + 1); if (si >= 0) g.splits.splice(si, 1);
+  // rebuild the standing rack from what's left in this frame
+  if (f.length === 0) { state.standing = [1,2,3,4,5,6,7,8,9,10]; state.ballIdx = 0; }
+  else { state.standing = [1,2,3,4,5,6,7,8,9,10]; state.ballIdx = f.length; }
+  state.selected = []; state.splitOverride = null;
+  save(); render();
+}
+
+/* ===================== RENDER ===================== */
+function ballGlyph(f, i, fi) {
+  const v = f[i];
+  if (v === undefined) return { t: '', c: '' };
+  if (fi < 9 && i === 0 && v === 10) return { t: 'X', c: 'x' };
+  if (fi === 9 && v === 10) return { t: 'X', c: 'x' };
+  if (i > 0 && f[i - 1] !== 10 && f[i - 1] + v === 10) return { t: '/', c: 'sp' };
+  if (v === 0) return { t: '–', c: 'ms' };
+  return { t: String(v), c: '' };
+}
+
+function renderStrip() {
+  const g = curGame(); const strip = $('strip'); strip.innerHTML = '';
+  const run = scoreGame(g.throws.map(f => [...f]));
+  for (let fi = 0; fi < 10; fi++) {
+    const f = g.throws[fi] || [];
+    const d = document.createElement('div');
+    d.className = 'f' + (fi === 9 ? ' wide' : '') + (fi === g.throws.length - 1 ? ' cur' : '');
+    const isSpl = g.splits.includes(fi + 1);
+    let cells = '';
+    const nCell = fi === 9 ? 3 : 2;
+    if (fi < 9 && f[0] === 10) cells = '<span></span><span class="x">X</span>';
+    else for (let i = 0; i < nCell; i++) {
+      const b = ballGlyph(f, i, fi);
+      const cls = (i === 0 && isSpl) ? 'spl' : b.c;
+      cells += `<span class="${cls}">${(i === 0 && isSpl && b.t) ? b.t : b.t}</span>`;
+    }
+    d.innerHTML = `<div class="n">${fi + 1}</div><div class="bl">${cells}</div><div class="tot">${run[fi] == null ? '' : run[fi]}</div>`;
+    strip.appendChild(d);
+  }
+  const cur = strip.querySelector('.f.cur'); if (cur) cur.scrollIntoView({ inline: 'center', block: 'nearest' });
+  const last = run.filter(v => v != null).slice(-1)[0] || 0;
+  $('liveScore').textContent = last;
+  const done = run.filter(v => v != null).length;
+  $('livePace').textContent = done ? `through ${done} frame${done === 1 ? '' : 's'} · pace ${Math.round(last / done * 10)}` : 'live score';
+}
+
+function renderDeck() {
+  const deck = $('deck'); deck.innerHTML = '';
+  for (const p in PINPOS) {
+    const [x, y] = PINPOS[p];
+    const b = document.createElement('button');
+    const n = +p;
+    const gone = !state.standing.includes(n);
+    b.className = 'pin' + (state.selected.includes(n) ? ' up' : '') + (gone ? ' gone' : '');
+    b.style.left = x + '%'; b.style.top = y + '%';
+    b.textContent = p;
+    b.onclick = () => togglePin(n);
+    deck.appendChild(b);
+  }
+}
+
+function render() {
+  const g = curGame();
+  const fi = g.throws.length - 1;
+  const f = g.throws[fi] || [];
+  $('bTitle').textContent = `Game ${g.game}`;
+  $('bMeta').textContent = `${state.session.house}${state.session.lane ? ' · Lane ' + state.session.lane : ''} · Frame ${fi + 1}`;
+  renderStrip(); renderDeck();
+
+  const knocked = state.standing.length - state.selected.length;
+  const ballNo = f.length + 1;
+  $('prompt').innerHTML = state.standing.length === 10 && f.length === 0
+    ? 'Ball 1 — tap the pins <b>left standing</b>'
+    : `Ball ${ballNo} — tap what’s <b>still standing</b>`;
+
+  // split flag (first ball of frames 1-9 only)
+  const sf = $('splitflag');
+  if (f.length === 0 && fi < 9 && state.selected.length >= 2) {
+    const auto = isSplit(state.selected);
+    const on = state.splitOverride !== null ? state.splitOverride : auto;
+    sf.innerHTML = `<button class="${on ? 'on' : ''}">${on ? 'SPLIT' : 'Not a split'}</button>`;
+    sf.querySelector('button').onclick = () => { state.splitOverride = !on; render(); };
+  } else sf.innerHTML = '';
+
+  const btn = $('btnPrimary');
+  btn.className = 'primary';
+  if (state.selected.length === 0) {
+    if (f.length === 0) { btn.classList.add('strike'); btn.textContent = 'STRIKE'; }
+    else { btn.classList.add('spare'); btn.textContent = 'SPARE'; }
+  } else {
+    btn.classList.add('count');
+    btn.textContent = `Enter — ${knocked} pin${knocked === 1 ? '' : 's'} down`;
+  }
+}
+
+/* ===================== DATA VIEW ===================== */
+function allGames() { return store.sessions.flatMap(s => s.games.filter(g => g.printed_total != null)); }
+function renderData() {
+  const gs = allGames();
+  const tot = gs.reduce((a, g) => a + g.printed_total, 0);
+  $('allStats').innerHTML = [
+    ['Games logged', gs.length],
+    ['Average', gs.length ? (tot / gs.length).toFixed(1) : '—'],
+    ['High game', gs.length ? Math.max(...gs.map(g => g.printed_total)) : '—'],
+    ['Sessions', store.sessions.length]
+  ].map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+  $('sesList').innerHTML = store.sessions.length
+    ? store.sessions.slice().reverse().map(s => {
+        const done = s.games.filter(g => g.printed_total != null);
+        const avg = done.length ? (done.reduce((a, g) => a + g.printed_total, 0) / done.length).toFixed(1) : '—';
+        const pins = s.games.reduce((n, g) => n + Object.keys(g.leaves || {}).length, 0);
+        return `<div class="sesrow"><div><div class="l">${s.date}<span class="tag">${s.source}</span></div>
+          <div class="sub">${s.house}${s.lane ? ' · Lane ' + s.lane : ''} · ${done.length} game${done.length === 1 ? '' : 's'}${pins ? ' · ' + pins + ' leaves' : ''}</div></div>
+          <div class="r">${avg}</div></div>`;
+      }).join('')
+    : '<p>No sessions yet.</p>';
+
+  $('dataHint').innerHTML = 'Export writes a JSON file. Save it into your <b>Bowling Scores</b> folder — Claude merges it with anything parsed from score-sheet PDFs, preferring whichever copy has pin-level data.';
+}
+
+function buildExport() {
+  const clean = JSON.parse(JSON.stringify(store.sessions));
+  clean.forEach(s => {
+    s.games = s.games.filter(g => g.throws && g.throws.length);   // drop abandoned games
+    s.games.forEach(g => {
+      g.throws = g.throws.map(f => f.filter(x => typeof x === 'number'));
+      if (g.printed_total != null) g.printed_running = scoreGame(g.throws);
+    });
+  });
+  return { bowler: 'Janson', schema_version: 2, exported_from: 'tracker', sessions: clean.filter(s => s.games.length) };
+}
+async function exportData() {
+  const payload = JSON.stringify(buildExport(), null, 2);
+  const name = 'bowling_app_' + new Date().toISOString().slice(0, 10) + '.json';
+  const file = new File([payload], name, { type: 'application/json' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: 'Bowling data' }); return; } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }));
+  const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  toast('Exported ' + name);
+}
+function importData(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const inc = JSON.parse(r.result);
+      const res = mergeSessions(store.sessions, inc.sessions || []);
+      store.sessions = res.sessions; save(); renderData();
+      const added = res.log.filter(l => l.action === 'added').length;
+      const rep = res.log.filter(l => l.action === 'replaced').length;
+      toast(`Merged: ${added} added, ${rep} replaced, ${res.log.length - added - rep} skipped`);
+    } catch (e) { toast('Could not read that file'); }
+  };
+  r.readAsText(file); ev.target.value = '';
+}
+
+/* ===================== BOOT ===================== */
+load();
+$('iDate').value = new Date().toISOString().slice(0, 10);
+const lastS = store.sessions[store.sessions.length - 1];
+if (lastS) { $('iHouse').value = lastS.house || ''; $('iLane').value = lastS.lane || ''; }
+if (lastS && lastS.games.some(g => g.printed_total == null && g.throws.length)) {
+  state.session = lastS; state.gi = lastS.games.findIndex(g => g.printed_total == null);
+  const g = state.session.games[state.gi];
+  const f = g.throws[g.throws.length - 1];
+  if (!f || f._done) startFrame();
+  else { state.standing = [1,2,3,4,5,6,7,8,9,10]; state.selected = []; state.ballIdx = f.length; }
+  render(); go('vBowl');
+}
+</script>
+</body>
+</html>
