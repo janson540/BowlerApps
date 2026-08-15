@@ -404,17 +404,25 @@ function analyzeGames(games) {
    GitHub Pages repo), they share local storage — so games logged on the phone
    appear here immediately, with no export/sweep round trip. Wrapped defensively:
    if storage is unavailable the page just falls back to the embedded data. */
-function sessionKey(s) { return [s.date, (s.house || '').toLowerCase().replace(/\s+/g, ''), s.lane == null ? '' : s.lane].join('|'); }
+function sessionKey(s) { return [s.date, (s.house || '').toLowerCase().replace(/\s+/g, '')].join('|'); }
+function sameSession(a, b) {
+  if (sessionKey(a) !== sessionKey(b)) return false;
+  if (a.lane != null && b.lane != null && a.lane !== b.lane) return false;   // lane only splits when both are known and differ
+  return true;
+}
 function richness(s) { return s.games.reduce((n, g) => n + Object.keys(g.leaves || {}).length, 0); }
 function mergeSessions(existing, incoming) {
-  const byKey = new Map();
-  existing.forEach(s => byKey.set(sessionKey(s), s));
+  const out = existing.slice();
   incoming.forEach(s => {
-    const k = sessionKey(s), cur = byKey.get(k);
-    if (!cur) { byKey.set(k, s); return; }
-    if (richness(s) > richness(cur) || s.games.length > cur.games.length) byKey.set(k, s);
+    const i = out.findIndex(x => sameSession(x, s));
+    if (i < 0) { out.push(s); return; }
+    const cur = out[i];
+    const keep = (richness(s) > richness(cur) || (richness(s) === richness(cur) && s.games.length > cur.games.length)) ? s : cur;
+    const drop = keep === s ? cur : s;
+    if (keep.lane == null && drop.lane != null) keep.lane = drop.lane;
+    out[i] = keep;
   });
-  return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 let LIVE_COUNT = 0;
 (function hydrate() {

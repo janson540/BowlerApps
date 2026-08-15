@@ -263,32 +263,39 @@ function rackAttempts(throws) {
 
 /* ---- Merge: reconcile app-entered sessions with PDF-parsed ones ---- */
 function sessionKey(s) {
-  return [s.date, (s.house || '').toLowerCase().replace(/\s+/g, ''), s.lane == null ? '' : s.lane].join('|');
+  return [s.date, (s.house || '').toLowerCase().replace(/\s+/g, '')].join('|');
+}
+/* Lane is NOT part of the key — it's often blank on one side. It only separates
+   two sessions when both sides state a lane and the lanes differ (a morning
+   practice and an evening league at the same house on the same day). */
+function sameSession(a, b) {
+  if (sessionKey(a) !== sessionKey(b)) return false;
+  if (a.lane != null && b.lane != null && a.lane !== b.lane) return false;
+  return true;
 }
 function richness(s) {
   // a session carrying pin-level leaves beats one that only has counts
   return s.games.reduce((n, g) => n + Object.keys(g.leaves || {}).length, 0);
 }
 function mergeSessions(existing, incoming) {
-  const byKey = new Map();
+  const out = existing.slice();
   const log = [];
-  existing.forEach(s => byKey.set(sessionKey(s), s));
   incoming.forEach(s => {
-    const k = sessionKey(s);
-    if (!byKey.has(k)) { byKey.set(k, s); log.push({ action: 'added', key: k, source: s.source }); return; }
-    const cur = byKey.get(k);
-    if (richness(s) > richness(cur)) {
-      byKey.set(k, s);
-      log.push({ action: 'replaced', key: k, from: cur.source, to: s.source, reason: 'incoming has pin-level data' });
-    } else if (s.games.length > cur.games.length) {
-      byKey.set(k, s);
-      log.push({ action: 'replaced', key: k, from: cur.source, to: s.source, reason: 'incoming has more games' });
-    } else {
-      log.push({ action: 'skipped', key: k, reason: 'already present, not richer' });
-    }
+    const i = out.findIndex(x => sameSession(x, s));
+    if (i < 0) { out.push(s); log.push({ action: 'added', key: sessionKey(s), source: s.source }); return; }
+    const cur = out[i];
+    const keep = (richness(s) > richness(cur) || (richness(s) === richness(cur) && s.games.length > cur.games.length)) ? s : cur;
+    const drop = keep === s ? cur : s;
+    // a blank lane inherits the known one, so the record keeps the detail
+    if (keep.lane == null && drop.lane != null) keep.lane = drop.lane;
+    if (!keep.house || keep.house === 'Unknown') keep.house = drop.house || keep.house;
+    out[i] = keep;
+    log.push(keep === s
+      ? { action: 'replaced', key: sessionKey(s), from: cur.source, to: s.source,
+          reason: richness(s) > richness(cur) ? 'incoming has pin-level data' : 'incoming has more games' }
+      : { action: 'skipped', key: sessionKey(s), reason: 'existing copy is richer or equal' });
   });
-  const merged = [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
-  return { sessions: merged, log };
+  return { sessions: out.sort((a, b) => a.date.localeCompare(b.date)), log };
 }
 
 
