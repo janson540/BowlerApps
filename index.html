@@ -109,6 +109,10 @@
   .stat{background:var(--surface-1); padding:12px 13px}
   .stat .k{font-size:11.5px; color:var(--text-muted)} .stat .v{font-size:21px; font-weight:640; margin-top:2px}
   .hint{font-size:12px; color:var(--text-muted); margin-top:10px; line-height:1.5}
+  .statslink{display:block; text-align:center; margin-top:10px; padding:13px; border-radius:12px;
+    background:var(--surface-2); border:1px solid var(--line); color:var(--text-secondary);
+    text-decoration:none; font-size:14px}
+  .statslink:active{background:var(--surface-3)}
   .toast{position:fixed; left:50%; bottom:32px; transform:translateX(-50%) translateY(10px);
     background:var(--surface-3); border:1px solid var(--line-strong); color:var(--text-primary);
     padding:11px 17px; border-radius:11px; font-size:13.5px; opacity:0; transition:.2s; pointer-events:none; z-index:99; max-width:88%}
@@ -162,6 +166,7 @@
   </div>
   <input type="file" id="fImport" accept="application/json,.json" style="display:none" onchange="importData(event)">
   <button class="primary" onclick="newSession()">New session</button>
+  <a class="statslink" href="bowling_dashboard.html">View full stats &amp; charts →</a>
   <div class="hint" id="dataHint"></div>
 </section>
 
@@ -301,6 +306,10 @@ const PINPOS = { 7:[10,8], 8:[36.7,8], 9:[63.3,8], 10:[90,8],
 let store = { sessions: [] };
 let state = { session: null, gi: 0, standing: [], selected: [], ballIdx: 0, splitOverride: null };
 
+/* Local calendar day. new Date().toISOString() is UTC — after 8pm Eastern that
+   rolls to tomorrow, which is squarely inside league hours. */
+function todayLocal() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+
 function load() { try { const r = localStorage.getItem(LS); if (r) store = JSON.parse(r); } catch (e) {} }
 function save() { try { localStorage.setItem(LS, JSON.stringify(store)); } catch (e) { toast('Storage unavailable — export before closing'); } }
 function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600); }
@@ -309,16 +318,18 @@ const $ = s => document.getElementById(s);
 
 /* ===================== SESSION FLOW ===================== */
 function newSession() {
-  $('iDate').value = new Date().toISOString().slice(0, 10);
+  $('iDate').value = todayLocal();
   const last = store.sessions[store.sessions.length - 1];
   if (last) { $('iHouse').value = last.house || ''; $('iLane').value = last.lane || ''; }
   go('vSetup');
 }
 function startSession() {
-  const date = $('iDate').value || new Date().toISOString().slice(0, 10);
+  const house = $('iHouse').value.trim();
+  if (!house) { toast('Enter the house — it’s part of how sessions are matched up'); $('iHouse').focus(); return; }
+  const date = $('iDate').value || todayLocal();
   const s = {
     id: 's-' + date + '-' + Math.random().toString(36).slice(2, 7),
-    date, house: $('iHouse').value.trim() || 'Unknown', lane: +$('iLane').value || null,
+    date, house, lane: +$('iLane').value || null,
     source: 'app', games: []
   };
   store.sessions.push(s); state.session = s; state.gi = 0;
@@ -555,7 +566,7 @@ function buildExport() {
 }
 async function exportData() {
   const payload = JSON.stringify(buildExport(), null, 2);
-  const name = 'bowling_app_' + new Date().toISOString().slice(0, 10) + '.json';
+  const name = 'bowling_app_' + todayLocal() + '.json';
   const file = new File([payload], name, { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: 'Bowling data' }); return; } catch (e) { if (e.name === 'AbortError') return; }
@@ -583,7 +594,7 @@ function importData(ev) {
 
 /* ===================== BOOT ===================== */
 load();
-$('iDate').value = new Date().toISOString().slice(0, 10);
+$('iDate').value = todayLocal();
 const lastS = store.sessions[store.sessions.length - 1];
 if (lastS) { $('iHouse').value = lastS.house || ''; $('iLane').value = lastS.lane || ''; }
 if (lastS && lastS.games.some(g => g.printed_total == null && g.throws.length)) {

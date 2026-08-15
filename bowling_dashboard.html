@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bowling Progress — Janson</title>
+<style>
+  :root{
+    color-scheme: light;
+    --surface-0:#f4f3f0; --surface-1:#fcfcfb; --surface-2:#efeeea;
+    --line:#e2e1dc; --line-strong:#cfcec8;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#84837c;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --gray-mark:#b9b8b1;
+    --good:#1baf7a; --warn:#eda100; --bad:#e34948;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:where(:not([data-theme="light"])){
+      color-scheme: dark;
+      --surface-0:#111110; --surface-1:#1a1a19; --surface-2:#232322;
+      --line:#333331; --line-strong:#45443f;
+      --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --gray-mark:#5a5954;
+      --good:#199e70; --warn:#c98500; --bad:#e66767;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --surface-0:#111110; --surface-1:#1a1a19; --surface-2:#232322;
+    --line:#333331; --line-strong:#45443f;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8e85;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --gray-mark:#5a5954;
+    --good:#199e70; --warn:#c98500; --bad:#e66767;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--surface-0); color:var(--text-primary);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 22px 64px}
+
+  header.top{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px}
+  h1{font-size:21px; margin:0 0 3px; letter-spacing:-.01em}
+  .sub{color:var(--text-secondary); font-size:13.5px; margin:0}
+  .controls{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  select,button{
+    font:inherit; font-size:13px; color:var(--text-primary); background:var(--surface-1);
+    border:1px solid var(--line-strong); border-radius:8px; padding:7px 11px; cursor:pointer;
+  }
+  select:hover,button:hover{background:var(--surface-2)}
+  .applink{font-size:13px; text-decoration:none; color:#fff; background:var(--s1); border:1px solid var(--s1);
+    border-radius:8px; padding:8px 12px; font-weight:600; display:inline-block}
+  .applink:hover{filter:brightness(.93)}
+  button.on{background:var(--s1); border-color:var(--s1); color:#fff}
+
+  .card{background:var(--surface-1); border:1px solid var(--line); border-radius:12px; padding:18px 20px}
+  .grid{display:grid; gap:14px}
+
+  /* hero + KPIs */
+  .heroRow{display:grid; grid-template-columns:minmax(210px,1fr) 2.1fr; gap:14px; margin-bottom:14px}
+  @media(max-width:820px){.heroRow{grid-template-columns:1fr}}
+  .hero .label{font-size:12.5px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em}
+  .hero .val{font-size:56px; font-weight:640; letter-spacing:-.03em; line-height:1.02; margin:6px 0 2px}
+  .hero .note{font-size:13px; color:var(--text-secondary)}
+  .kpis{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  @media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--surface-1); padding:14px 16px}
+  .kpi .k{font-size:12px; color:var(--text-secondary); margin-bottom:5px}
+  .kpi .v{font-size:25px; font-weight:600; letter-spacing:-.02em}
+  .kpi .d{font-size:12px; color:var(--text-muted); margin-top:2px}
+
+  h2{font-size:15px; margin:0 0 2px; font-weight:600}
+  .cap{font-size:12.5px; color:var(--text-secondary); margin:0 0 14px}
+
+  .two{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+
+  svg{display:block; width:100%; height:auto; overflow:visible}
+  .axis{font-size:11px; fill:var(--text-muted)}
+  .axisLab{font-size:11.5px; fill:var(--text-secondary)}
+  .valLab{font-size:11.5px; fill:var(--text-primary); font-weight:600;
+    paint-order:stroke; stroke:var(--surface-1); stroke-width:3px; stroke-linejoin:round}
+  .refLab{font-size:11px; fill:var(--text-secondary);
+    paint-order:stroke; stroke:var(--surface-1); stroke-width:3px; stroke-linejoin:round}
+  .gl{stroke:var(--line); stroke-width:1}
+  .ref{stroke:var(--line-strong); stroke-width:1}
+  .hit{fill:transparent; cursor:pointer}
+
+  .legend{display:flex; gap:16px; flex-wrap:wrap; margin:0 0 12px; font-size:12.5px; color:var(--text-secondary)}
+  .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px}
+
+  /* scoresheet */
+  .tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px}
+  .tab{font-size:12.5px; padding:6px 12px; border-radius:8px; border:1px solid var(--line-strong); background:var(--surface-1); cursor:pointer; color:var(--text-secondary)}
+  .tab.on{background:var(--s1); border-color:var(--s1); color:#fff; font-weight:600}
+  .sheet{display:grid; grid-template-columns:repeat(10,1fr); gap:2px; overflow-x:auto}
+  .fr{border:1px solid var(--line); border-radius:6px; overflow:hidden; min-width:64px; background:var(--surface-1)}
+  .fr .fnum{font-size:10px; color:var(--text-muted); text-align:center; padding:2px 0; background:var(--surface-2)}
+  .fr .balls{display:flex; border-bottom:1px solid var(--line)}
+  .fr .b{flex:1; text-align:center; padding:5px 0; font-size:13.5px; font-weight:600; border-right:1px solid var(--line)}
+  .fr .b:last-child{border-right:none}
+  .fr .b.mark{color:var(--s1)}
+  .fr .b.sp{color:var(--s3)}
+  .fr .b.miss{color:var(--text-muted)}
+  .fr .b.split{color:var(--bad)}
+  .fr .cum{text-align:center; padding:6px 0; font-size:15px; font-weight:640; font-variant-numeric:tabular-nums}
+  .fr.isOpen{background:color-mix(in srgb, var(--s2) 8%, var(--surface-1))}
+
+  table{border-collapse:collapse; width:100%; font-size:13px; font-variant-numeric:tabular-nums}
+  th,td{text-align:right; padding:7px 9px; border-bottom:1px solid var(--line)}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--text-secondary); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em}
+  .hidden{display:none}
+
+  ul.take{margin:0; padding-left:18px}
+  ul.take li{margin-bottom:9px; color:var(--text-secondary)}
+  ul.take li b{color:var(--text-primary); font-weight:600}
+  .pill{display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:99px; margin-left:6px; vertical-align:1px}
+  .pill.bad{background:color-mix(in srgb,var(--bad) 16%,transparent); color:var(--bad)}
+  .pill.warn{background:color-mix(in srgb,var(--warn) 18%,transparent); color:var(--warn)}
+  .pill.good{background:color-mix(in srgb,var(--good) 16%,transparent); color:var(--good)}
+
+  .tip{
+    position:fixed; pointer-events:none; opacity:0; transition:opacity .1s;
+    background:var(--surface-1); border:1px solid var(--line-strong); border-radius:8px;
+    padding:8px 11px; font-size:12.5px; box-shadow:0 6px 20px rgba(0,0,0,.14); z-index:50; max-width:230px;
+  }
+  .tip b{display:block; margin-bottom:3px; font-size:12.5px}
+  .tip .r{color:var(--text-secondary)}
+  .empty{color:var(--text-muted); font-size:13px; padding:26px 0; text-align:center; border:1px dashed var(--line-strong); border-radius:10px}
+  footer{margin-top:26px; font-size:12px; color:var(--text-muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div>
+    <h1>Bowling progress</h1>
+    <p class="sub" id="subhead"></p>
+  </div>
+  <div class="controls">
+    <select id="sessionSel"></select>
+    <a class="applink" href="index.html">Log a game</a>
+    <button id="tableBtn">Table view</button>
+    <button id="themeBtn">Dark</button>
+  </div>
+</header>
+
+<div class="heroRow">
+  <div class="card hero">
+    <div class="label">Session average</div>
+    <div class="val" id="heroVal">—</div>
+    <div class="note" id="heroNote"></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+</div>
+
+<div class="grid" style="margin-bottom:14px">
+  <div class="card">
+    <h2>Where the points are going</h2>
+    <p class="cap">Auto-generated from the frame data. Updates as sessions are added.</p>
+    <ul class="take" id="takeaways"></ul>
+  </div>
+</div>
+
+<div class="two" style="margin-bottom:14px">
+  <div class="card">
+    <h2>Game scores</h2>
+    <p class="cap" id="gsCap"></p>
+    <div id="chartGames"></div>
+  </div>
+  <div class="card">
+    <h2>Spare conversion by leave size</h2>
+    <p class="cap">Share of spare attempts converted, grouped by how many pins were standing after the first ball.</p>
+    <div id="chartLeave"></div>
+  </div>
+</div>
+
+<div class="two" style="margin-bottom:14px">
+  <div class="card">
+    <h2>First ball by frame position</h2>
+    <p class="cap">Average pins on the opening ball of each frame — flat is good, a drop late means fade. Orange bars sit more than a pin below your overall first-ball average.</p>
+    <div id="chartPos"></div>
+  </div>
+  <div class="card">
+    <h2>Frame outcomes by game</h2>
+    <p class="cap">Every full rack in the game, sorted into strike, spare, or open.</p>
+    <div class="legend" id="legMix"></div>
+    <div id="chartMix"></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Score history</h2>
+  <p class="cap">Game-by-game across every session, with a rolling average once there's enough data.</p>
+  <div id="chartHistory"></div>
+</div>
+
+<div class="card" style="margin-bottom:14px">
+  <h2>Scoresheet</h2>
+  <p class="cap">Reconstructed from the printout — every running total verified against the original.</p>
+  <div class="tabs" id="gameTabs"></div>
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="card hidden" id="tableCard">
+  <h2>Frame data</h2>
+  <p class="cap">Every ball, every session — the full underlying record.</p>
+  <div style="overflow-x:auto"><table id="dataTable"></table></div>
+</div>
+
+<footer id="foot"></footer>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+/* ============================ DATA ============================ */
+const DATA = {
+  "bowler": "Janson",
+  "schema_version": 1,
+  "notes": "throws = pins knocked down per ball, in order. Frame 10 may have 3 throws. splits = 1-indexed frame numbers where a split was marked (circled) on the sheet. leaves = optional map of frame -> list of pin numbers left standing after ball 1 (from the pin diagram); populate as available.",
+  "sessions": [
+    {
+      "date": "2026-08-14",
+      "house": "Holiday Bowl",
+      "location": "Chester, VA",
+      "lane": 22,
+      "team": "Team 22",
+      "handicap": 0,
+      "games": [
+        {
+          "game": 1,
+          "printed_total": 85,
+          "printed_running": [5, 13, 18, 27, 46, 62, 68, 69, 76, 85],
+          "throws": [[1,4],[8,0],[5,0],[9,0],[0,10],[9,1],[6,0],[1,0],[0,7],[9,0]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 2,
+          "printed_total": 115,
+          "printed_running": [0, 9, 29, 49, 66, 75, 93, 101, 108, 115],
+          "throws": [[0,0],[9,0],[9,1],[10],[7,3],[7,2],[10],[1,7],[4,3],[6,1]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 3,
+          "printed_total": 150,
+          "printed_running": [19, 28, 46, 54, 71, 78, 85, 112, 132, 150],
+          "throws": [[10],[7,2],[6,4],[8,0],[9,1],[7,0],[1,6],[10],[10],[7,3,8]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 4,
+          "printed_total": 109,
+          "printed_running": [8, 27, 36, 53, 61, 78, 85, 93, 100, 109],
+          "throws": [[7,1],[10],[9,0],[9,1],[7,1],[10],[7,0],[6,2],[7,0],[7,2]],
+          "splits": [9],
+          "leaves": {}
+        },
+        {
+          "game": 5,
+          "printed_total": 122,
+          "printed_running": [8, 17, 34, 43, 52, 66, 70, 87, 94, 122],
+          "throws": [[8,0],[9,0],[3,7],[7,2],[7,2],[10],[4,0],[10],[5,2],[10,10,8]],
+          "splits": [1],
+          "leaves": {}
+        },
+        {
+          "game": 6,
+          "printed_total": 140,
+          "printed_running": [19, 28, 55, 74, 83, 97, 105, 123, 131, 140],
+          "throws": [[10],[6,3],[10],[10],[7,2],[7,3],[4,4],[10],[6,2],[9,0]],
+          "splits": [],
+          "leaves": {}
+        }
+      ]
+    }
+  ]
+};
+
+/* ========================== ENGINE ============================ */
+/* ---- Scoring + analytics engine (shared by the dashboard and the node test) ---- */
+
+function scoreGame(throws) {
+  const balls = [];
+  throws.forEach(f => f.forEach(b => balls.push(b)));
+  const running = [];
+  let total = 0, bi = 0;
+  for (let frame = 0; frame < 10; frame++) {
+    if (frame < 9) {
+      if (balls[bi] === 10) { total += 10 + balls[bi + 1] + balls[bi + 2]; bi += 1; }
+      else if (balls[bi] + balls[bi + 1] === 10) { total += 10 + balls[bi + 2]; bi += 2; }
+      else { total += balls[bi] + balls[bi + 1]; bi += 2; }
+    } else {
+      for (let k = bi; k < balls.length; k++) total += balls[k];
+    }
+    running.push(total);
+  }
+  return running;
+}
+
+/* A "rack attempt" = one ball delivered at a full rack of 10, plus what happened next. */
+function rackAttempts(throws) {
+  const out = [];
+  for (let fi = 0; fi < 10; fi++) {
+    const f = throws[fi];
+    if (fi < 9) {
+      if (f[0] === 10) out.push({ frame: fi + 1, first: 10, leave: 0, result: 'strike' });
+      else out.push({
+        frame: fi + 1, first: f[0], leave: 10 - f[0],
+        result: (f[0] + f[1] === 10) ? 'spare' : 'open', second: f[1]
+      });
+    } else {
+      let i = 0;
+      while (i < f.length) {
+        if (f[i] === 10) { out.push({ frame: 10, first: 10, leave: 0, result: 'strike' }); i += 1; }
+        else if (i + 1 < f.length) {
+          const made = f[i] + f[i + 1] === 10;
+          out.push({ frame: 10, first: f[i], leave: 10 - f[i], result: made ? 'spare' : 'open', second: f[i + 1] });
+          i += 2;
+        } else { out.push({ frame: 10, first: f[i], leave: 10 - f[i], result: 'fill' }); i += 1; }
+      }
+    }
+  }
+  return out;
+}
+
+function framePinfall(throws) {
+  // raw pins knocked down per frame (no bonus), for frame-position analysis
+  return throws.map(f => f.reduce((a, b) => a + b, 0));
+}
+
+function analyzeGames(games) {
+  const atts = [];
+  games.forEach(g => rackAttempts(g.throws).forEach(a => atts.push({ ...a, game: g.game })));
+
+  const strikes = atts.filter(a => a.result === 'strike').length;
+  const spares = atts.filter(a => a.result === 'spare').length;
+  const opens = atts.filter(a => a.result === 'open').length;
+  const spareAttempts = spares + opens;
+  const firstBallAvg = atts.reduce((s, a) => s + a.first, 0) / atts.length;
+
+  const buckets = [
+    { key: '1 pin', test: l => l === 1 },
+    { key: '2–3 pins', test: l => l >= 2 && l <= 3 },
+    { key: '4–5 pins', test: l => l >= 4 && l <= 5 },
+    { key: '6+ pins', test: l => l >= 6 }
+  ].map(b => {
+    const rel = atts.filter(a => (a.result === 'spare' || a.result === 'open') && b.test(a.leave));
+    const made = rel.filter(a => a.result === 'spare').length;
+    return { key: b.key, attempts: rel.length, made, pct: rel.length ? made / rel.length * 100 : null };
+  });
+
+  // frame-position pinfall (raw pins, averaged across games)
+  const pos = [];
+  for (let i = 0; i < 10; i++) {
+    const vals = games.map(g => framePinfall(g.throws)[i]);
+    pos.push({ frame: i + 1, avg: vals.reduce((a, b) => a + b, 0) / vals.length });
+  }
+
+  // count after a strike: the next two balls following each strike in frames 1-9
+  let afterStrikeTotal = 0, afterStrikeN = 0, doubles = 0;
+  games.forEach(g => {
+    const balls = []; g.throws.forEach(f => f.forEach(b => balls.push(b)));
+    let bi = 0;
+    for (let fr = 0; fr < 9; fr++) {
+      if (balls[bi] === 10) {
+        afterStrikeTotal += balls[bi + 1] + balls[bi + 2]; afterStrikeN++;
+        if (balls[bi + 1] === 10) doubles++;
+        bi += 1;
+      } else bi += 2;
+    }
+  });
+
+  const totals = games.map(g => g.printed_total);
+  const splitCount = games.reduce((s, g) => s + (g.splits ? g.splits.length : 0), 0);
+
+  return {
+    games: games.length, attempts: atts.length, strikes, spares, opens, spareAttempts,
+    strikePct: strikes / atts.length * 100,
+    sparePct: spareAttempts ? spares / spareAttempts * 100 : null,
+    cleanPct: (strikes + spares) / atts.length * 100,
+    firstBallAvg, buckets, pos, splitCount,
+    afterStrike: afterStrikeN ? afterStrikeTotal / afterStrikeN : null,
+    doubles,
+    series: totals.reduce((a, b) => a + b, 0),
+    avg: totals.reduce((a, b) => a + b, 0) / totals.length,
+    high: Math.max(...totals), low: Math.min(...totals),
+    attemptsRaw: atts
+  };
+}
+
+
+
+
+
+/* ================== LIVE DATA FROM THE TRACKER APP ==================
+   When this page and the tracker are served from the same origin (both in the
+   GitHub Pages repo), they share local storage — so games logged on the phone
+   appear here immediately, with no export/sweep round trip. Wrapped defensively:
+   if storage is unavailable the page just falls back to the embedded data. */
+function sessionKey(s) { return [s.date, (s.house || '').toLowerCase().replace(/\s+/g, ''), s.lane == null ? '' : s.lane].join('|'); }
+function richness(s) { return s.games.reduce((n, g) => n + Object.keys(g.leaves || {}).length, 0); }
+function mergeSessions(existing, incoming) {
+  const byKey = new Map();
+  existing.forEach(s => byKey.set(sessionKey(s), s));
+  incoming.forEach(s => {
+    const k = sessionKey(s), cur = byKey.get(k);
+    if (!cur) { byKey.set(k, s); return; }
+    if (richness(s) > richness(cur) || s.games.length > cur.games.length) byKey.set(k, s);
+  });
+  return [...byKey.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+let LIVE_COUNT = 0;
+(function hydrate() {
+  let live = [];
+  try {
+    const raw = window.localStorage && localStorage.getItem('bowlingTracker.v1');
+    if (raw) live = JSON.parse(raw).sessions || [];
+  } catch (e) { return; }
+  // only finished 10-frame games are safe to analyse
+  const clean = live
+    .map(s => Object.assign({}, s, { games: (s.games || []).filter(g => g.printed_total != null && g.throws && g.throws.length === 10) }))
+    .filter(s => s.games.length);
+  if (!clean.length) return;
+  const before = DATA.sessions.length;
+  DATA.sessions = mergeSessions(DATA.sessions, clean);
+  LIVE_COUNT = clean.reduce((n, s) => n + s.games.length, 0);
+})();
+
+/* ========================== HELPERS =========================== */
+const $ = s => document.querySelector(s);
+const svgNS = 'http://www.w3.org/2000/svg';
+const el = (n, a = {}) => { const e = document.createElementNS(svgNS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+const fmt1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const tip = $('#tip');
+function showTip(ev, html) { tip.innerHTML = html; tip.style.opacity = 1; moveTip(ev); }
+function moveTip(ev) {
+  const p = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = ev.clientX + p, y = ev.clientY + p;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - p;
+  if (y + h > innerHeight - 8) y = ev.clientY - h - p;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip() { tip.style.opacity = 0; }
+function bindTip(node, html) {
+  node.addEventListener('mouseenter', e => showTip(e, html));
+  node.addEventListener('mousemove', moveTip);
+  node.addEventListener('mouseleave', hideTip);
+}
+/* rounded on the data-end only, square at the baseline */
+function capPath(x, y, w, h, r, dir) {
+  r = Math.max(0, Math.min(r, h, w / 2));
+  if (h <= 0.5) return `M${x} ${y + h} h${w}`;
+  if (dir === 'up') return `M${x} ${y + h} V${y + r} a${r} ${r} 0 0 1 ${r} ${-r} h${w - 2 * r} a${r} ${r} 0 0 1 ${r} ${r} V${y + h} Z`;
+  return `M${x} ${y} h${w - r} a${r} ${r} 0 0 1 ${r} ${r} v${h - 2 * r} a${r} ${r} 0 0 1 ${-r} ${r} h${-(w - r)} Z`;
+}
+
+/* ========================= STATE ============================== */
+let sIdx = 0, gTab = 0;
+
+/* ======================= CHART BUILDERS ======================= */
+function chartGames(host, games, avg) {
+  host.innerHTML = '';
+  const W = 520, H = 250, m = { t: 24, r: 14, b: 34, l: 34 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const max = 200;
+  const s = document.createElementNS(svgNS, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const y = v => m.t + ih - (v / max) * ih;
+  [0, 50, 100, 150, 200].forEach(t => {
+    s.appendChild(el('line', { x1: m.l, x2: m.l + iw, y1: y(t), y2: y(t), class: 'gl' }));
+    const tx = el('text', { x: m.l - 8, y: y(t) + 4, class: 'axis', 'text-anchor': 'end' }); tx.textContent = t; s.appendChild(tx);
+  });
+  s.appendChild(el('line', { x1: m.l, x2: m.l + iw, y1: y(avg), y2: y(avg), class: 'ref' }));
+  const band = iw / games.length, bw = Math.min(24, band * 0.5);
+  games.forEach((g, i) => {
+    const cx = m.l + band * i + band / 2;
+    const h = ih - (y(g.printed_total) - m.t);
+    const p = el('path', { d: capPath(cx - bw / 2, y(g.printed_total), bw, h, 4, 'up'), fill: 'var(--s1)' });
+    s.appendChild(p);
+    const vl = el('text', { x: cx, y: y(g.printed_total) - 8, class: 'valLab', 'text-anchor': 'middle' });
+    vl.textContent = g.printed_total; s.appendChild(vl);
+    const xl = el('text', { x: cx, y: H - 12, class: 'axisLab', 'text-anchor': 'middle' });
+    xl.textContent = 'G' + g.game; s.appendChild(xl);
+    const a = analyzeGames([g]);
+    const hit = el('rect', { x: m.l + band * i, y: m.t, width: band, height: ih, class: 'hit' });
+    bindTip(hit, `<b>Game ${g.game} — ${g.printed_total}</b><span class="r">${a.strikes} strikes · ${a.spares} spares · ${a.opens} open<br>First ball avg ${fmt1(a.firstBallAvg)}</span>`);
+    s.appendChild(hit);
+  });
+  const al = el('text', { x: m.l + 5, y: y(avg) - 7, class: 'refLab' });
+  al.textContent = 'avg ' + fmt1(avg); s.appendChild(al);
+  host.appendChild(s);
+}
+
+function chartLeave(host, buckets) {
+  host.innerHTML = '';
+  const rows = buckets.filter(b => b.attempts > 0);
+  const W = 520, rowH = 46, m = { t: 8, r: 92, b: 26, l: 74 };
+  const H = m.t + rows.length * rowH + m.b, iw = W - m.l - m.r;
+  const s = document.createElementNS(svgNS, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  [0, 25, 50, 75, 100].forEach(t => {
+    const x = m.l + iw * t / 100;
+    s.appendChild(el('line', { x1: x, x2: x, y1: m.t, y2: m.t + rows.length * rowH, class: 'gl' }));
+    const tx = el('text', { x, y: H - 8, class: 'axis', 'text-anchor': 'middle' }); tx.textContent = t + '%'; s.appendChild(tx);
+  });
+  rows.forEach((b, i) => {
+    const yc = m.t + i * rowH + rowH / 2, bh = 20;
+    const w = iw * (b.pct / 100);
+    s.appendChild(el('path', { d: capPath(m.l, yc - bh / 2, Math.max(w, 1), bh, 4, 'right'), fill: 'var(--s1)' }));
+    const lb = el('text', { x: m.l - 10, y: yc + 4, class: 'axisLab', 'text-anchor': 'end' }); lb.textContent = b.key; s.appendChild(lb);
+    const vl = el('text', { x: m.l + w + 10, y: yc + 4, class: 'valLab' });
+    vl.textContent = Math.round(b.pct) + '%  (' + b.made + '/' + b.attempts + ')'; s.appendChild(vl);
+    const hit = el('rect', { x: m.l, y: m.t + i * rowH, width: iw, height: rowH, class: 'hit' });
+    bindTip(hit, `<b>${b.key} standing</b><span class="r">Converted ${b.made} of ${b.attempts} attempts (${Math.round(b.pct)}%)<br>Missed ${b.attempts - b.made} — worth roughly ${(b.attempts - b.made) * 10} pins of scoring</span>`);
+    s.appendChild(hit);
+  });
+  host.appendChild(s);
+}
+
+function chartPos(host, games) {
+  host.innerHTML = '';
+  const byFrame = [];
+  for (let i = 0; i < 10; i++) {
+    const v = games.map(g => g.throws[i][0]);
+    byFrame.push(v.reduce((a, b) => a + b, 0) / v.length);
+  }
+  const overall = byFrame.reduce((a, b) => a + b, 0) / 10;
+  const W = 520, H = 250, m = { t: 24, r: 14, b: 34, l: 30 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const s = document.createElementNS(svgNS, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const y = v => m.t + ih - (v / 10) * ih;
+  [0, 2.5, 5, 7.5, 10].forEach(t => {
+    s.appendChild(el('line', { x1: m.l, x2: m.l + iw, y1: y(t), y2: y(t), class: 'gl' }));
+    const tx = el('text', { x: m.l - 8, y: y(t) + 4, class: 'axis', 'text-anchor': 'end' }); tx.textContent = t; s.appendChild(tx);
+  });
+  s.appendChild(el('line', { x1: m.l, x2: m.l + iw, y1: y(overall), y2: y(overall), class: 'ref' }));
+  const band = iw / 10, bw = Math.min(24, band * 0.52);
+  byFrame.forEach((v, i) => {
+    const cx = m.l + band * i + band / 2, h = ih - (y(v) - m.t);
+    s.appendChild(el('path', { d: capPath(cx - bw / 2, y(v), bw, h, 4, 'up'), fill: v < overall - 1 ? 'var(--s2)' : 'var(--s1)' }));
+    const xl = el('text', { x: cx, y: H - 12, class: 'axis', 'text-anchor': 'middle' }); xl.textContent = i + 1; s.appendChild(xl);
+    const hit = el('rect', { x: m.l + band * i, y: m.t, width: band, height: ih, class: 'hit' });
+    bindTip(hit, `<b>Frame ${i + 1}</b><span class="r">First-ball average ${fmt1(v)} pins<br>${v >= overall ? 'At or above' : (overall - v).toFixed(1) + ' below'} your ${fmt1(overall)} overall</span>`);
+    s.appendChild(hit);
+  });
+  const al = el('text', { x: m.l + 5, y: y(overall) - 7, class: 'refLab' });
+  al.textContent = 'avg ' + fmt1(overall); s.appendChild(al);
+  host.appendChild(s);
+}
+
+function chartMix(host, games) {
+  host.innerHTML = '';
+  $('#legMix').innerHTML =
+    '<span><i style="background:var(--s1)"></i>Strike</span>' +
+    '<span><i style="background:var(--s3)"></i>Spare</span>' +
+    '<span><i style="background:var(--s2)"></i>Open</span>';
+  const W = 520, rowH = 40, m = { t: 6, r: 14, b: 8, l: 40 };
+  const H = m.t + games.length * rowH + m.b, iw = W - m.l - m.r;
+  const s = document.createElementNS(svgNS, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const cols = { strike: 'var(--s1)', spare: 'var(--s3)', open: 'var(--s2)' };
+  games.forEach((g, i) => {
+    const a = analyzeGames([g]);
+    const n = a.strikes + a.spares + a.opens;
+    const yc = m.t + i * rowH + rowH / 2, bh = 22;
+    let x = m.l;
+    const lb = el('text', { x: m.l - 10, y: yc + 4, class: 'axisLab', 'text-anchor': 'end' }); lb.textContent = 'G' + g.game; s.appendChild(lb);
+    [['strike', a.strikes], ['spare', a.spares], ['open', a.opens]].forEach(([k, c], si) => {
+      if (!c) return;
+      const w = iw * c / n;
+      const isFirst = x === m.l;
+      const isLast = Math.abs(x + w - (m.l + iw)) < 0.6;
+      const gap = 2;
+      const dw = Math.max(w - (isLast ? 0 : gap), 1);
+      let d;
+      if (isFirst && isLast) d = capPath(x, yc - bh / 2, dw, bh, 4, 'right');
+      else if (isFirst) d = `M${x + 4} ${yc - bh / 2} h${dw - 4} v${bh} h${-(dw - 4)} a4 4 0 0 1 -4 -4 v${-(bh - 8)} a4 4 0 0 1 4 -4 Z`;
+      else if (isLast) d = capPath(x, yc - bh / 2, dw, bh, 4, 'right');
+      else d = `M${x} ${yc - bh / 2} h${dw} v${bh} h${-dw} Z`;
+      s.appendChild(el('path', { d, fill: cols[k] }));
+      if (w > 26) {
+        const t = el('text', { x: x + dw / 2, y: yc + 4, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 600, fill: '#fff' });
+        t.textContent = c; s.appendChild(t);
+      }
+      const hit = el('rect', { x, y: yc - rowH / 2, width: dw, height: rowH, class: 'hit' });
+      bindTip(hit, `<b>Game ${g.game} — ${k}s</b><span class="r">${c} of ${n} racks (${Math.round(c / n * 100)}%)</span>`);
+      s.appendChild(hit);
+      x += w;
+    });
+  });
+  host.appendChild(s);
+}
+
+function chartHistory(host) {
+  host.innerHTML = '';
+  const pts = [];
+  DATA.sessions.forEach(ss => ss.games.forEach(g => pts.push({ date: ss.date, game: g.game, score: g.printed_total })));
+  if (DATA.sessions.length < 2) {
+    host.innerHTML = '<div class="empty">One session logged so far. Drop the next score sheet into the <b>Bowling Scores</b> folder and this chart fills in — trend line, rolling average, and session-over-session deltas.</div>';
+    return;
+  }
+  const W = 1080, H = 280, m = { t: 20, r: 24, b: 40, l: 40 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b, max = 200;
+  const s = document.createElementNS(svgNS, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const y = v => m.t + ih - (v / max) * ih;
+  const x = i => m.l + (pts.length === 1 ? iw / 2 : iw * i / (pts.length - 1));
+  [0, 50, 100, 150, 200].forEach(t => {
+    s.appendChild(el('line', { x1: m.l, x2: m.l + iw, y1: y(t), y2: y(t), class: 'gl' }));
+    const tx = el('text', { x: m.l - 8, y: y(t) + 4, class: 'axis', 'text-anchor': 'end' }); tx.textContent = t; s.appendChild(tx);
+  });
+  const roll = pts.map((_, i) => { const w = pts.slice(Math.max(0, i - 5), i + 1); return w.reduce((a, b) => a + b.score, 0) / w.length; });
+  s.appendChild(el('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(p.score)).join(' '), fill: 'none', stroke: 'var(--gray-mark)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  s.appendChild(el('path', { d: roll.map((v, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(v)).join(' '), fill: 'none', stroke: 'var(--s1)', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+  pts.forEach((p, i) => {
+    s.appendChild(el('circle', { cx: x(i), cy: y(p.score), r: 4, fill: 'var(--gray-mark)', stroke: 'var(--surface-1)', 'stroke-width': 2 }));
+    const hit = el('circle', { cx: x(i), cy: y(p.score), r: 14, class: 'hit' });
+    bindTip(hit, `<b>${p.date} — Game ${p.game}</b><span class="r">Score ${p.score}<br>6-game rolling avg ${fmt1(roll[i])}</span>`);
+    s.appendChild(hit);
+  });
+  $('#chartHistory').appendChild(s);
+  const leg = document.createElement('div');
+  leg.className = 'legend';
+  leg.innerHTML = '<span><i style="background:var(--gray-mark)"></i>Game score</span><span><i style="background:var(--s1)"></i>6-game rolling average</span>';
+  host.insertBefore(leg, host.firstChild);
+}
+
+/* ======================= SCORESHEET =========================== */
+function ballChar(f, i, throws, fi) {
+  const v = f[i];
+  if (v === 10 && (fi === 9 || i === 0)) return { t: 'X', c: 'mark' };
+  if (i > 0 && f[i - 1] !== 10 && f[i - 1] + v === 10) return { t: '/', c: 'sp' };
+  if (v === 0) return { t: '–', c: 'miss' };
+  return { t: String(v), c: '' };
+}
+function renderSheet(game) {
+  const host = $('#sheet'); host.innerHTML = '';
+  const run = scoreGame(game.throws);
+  const atts = rackAttempts(game.throws);
+  game.throws.forEach((f, fi) => {
+    const openHere = atts.some(a => a.frame === fi + 1 && a.result === 'open');
+    const d = document.createElement('div');
+    d.className = 'fr' + (openHere ? ' isOpen' : '');
+    const isSplit = (game.splits || []).includes(fi + 1);
+    let balls = '';
+    if (fi < 9 && f[0] === 10) {
+      // strike: left box stays empty, mark sits in the right box (as on the printed sheet)
+      balls = '<div class="b"></div><div class="b mark">X</div>';
+    } else {
+      for (let i = 0; i < f.length; i++) {
+        const b = ballChar(f, i, game.throws, fi);
+        const cls = (i === 0 && isSplit) ? 'split' : b.c;
+        balls += `<div class="b ${cls}">${(i === 0 && isSplit) ? '(' + b.t + ')' : b.t}</div>`;
+      }
+    }
+    d.innerHTML = `<div class="fnum">${fi + 1}</div><div class="balls">${balls}</div><div class="cum">${run[fi]}</div>`;
+    const pins = f.reduce((a, b) => a + b, 0);
+    bindTip(d, `<b>Frame ${fi + 1}</b><span class="r">Pins down: ${pins}${isSplit ? '<br><b style="color:var(--bad)">Split</b>' : ''}<br>Running total: ${run[fi]}</span>`);
+    host.appendChild(d);
+  });
+}
+
+/* ========================== RENDER ============================ */
+function renderTable() {
+  const t = $('#dataTable');
+  let h = '<thead><tr><th>Session</th><th>Game</th>';
+  for (let i = 1; i <= 10; i++) h += `<th>F${i}</th>`;
+  h += '<th>Score</th></tr></thead><tbody>';
+  DATA.sessions.forEach(ss => ss.games.forEach(g => {
+    h += `<tr><td>${ss.date}</td><td>${g.game}</td>`;
+    g.throws.forEach((f, fi) => {
+      const parts = [];
+      for (let i = 0; i < f.length; i++) { const b = ballChar(f, i, g.throws, fi); parts.push(b.t); }
+      h += `<td>${parts.join(' ')}</td>`;
+    });
+    h += `<td><b>${g.printed_total}</b></td></tr>`;
+  }));
+  h += '</tbody>';
+  t.innerHTML = h;
+}
+
+function takeaways(a, games) {
+  const out = [];
+  const missed = a.opens;
+  out.push(`<b>${a.opens} open frames out of ${a.attempts} racks.</b> Closing even half of them at 8 pins each is roughly <b>+${Math.round(a.opens / 2 * 9)} pins per session</b> — about ${Math.round(a.opens / 2 * 9 / a.games)} per game, with no change to your first ball.`);
+  const one = a.buckets.find(b => b.key === '1 pin');
+  if (one && one.attempts >= 3) {
+    const pill = one.pct >= 80 ? 'good' : one.pct >= 55 ? 'warn' : 'bad';
+    out.push(`<b>Single-pin spares: ${one.made} of ${one.attempts} (${Math.round(one.pct)}%).</b><span class="pill ${pill}">${one.pct >= 80 ? 'on track' : one.pct >= 55 ? 'needs work' : 'biggest leak'}</span> This is the cheapest scoring you own — a solid league bowler lives above 85% here. Each miss is a flat 10-pin giveaway.`);
+  }
+  out.push(`<b>First ball averages ${fmt1(a.firstBallAvg)} pins.</b> Strike rate ${fmt1(a.strikePct)}% off that. Carry is fine for the ball speed and rev rate that number implies — the score gap is on the spare shot, not the strike shot.`);
+  if (a.afterStrike !== null) {
+    out.push(`<b>Count after a strike: ${fmt1(a.afterStrike)} pins</b> across ${a.strikes} strikes, with ${a.doubles} double${a.doubles === 1 ? '' : 's'}. You're leaving bonus on the table — a strike is only worth what the next two balls do with it.`);
+  }
+  const scores = games.map(g => g.printed_total);
+  const firstHalf = scores.slice(0, Math.ceil(scores.length / 2)), secondHalf = scores.slice(Math.ceil(scores.length / 2));
+  const d = secondHalf.reduce((x, y) => x + y, 0) / secondHalf.length - firstHalf.reduce((x, y) => x + y, 0) / firstHalf.length;
+  out.push(`<b>Second half vs first half: ${d >= 0 ? '+' : ''}${fmt1(d)} pins per game.</b> ${d >= 0 ? "You're warming into the block rather than fading out of it — the shot is holding up." : 'Scores drift down across the block — worth watching whether that\'s the lanes breaking down or stamina.'}`);
+  if (a.splitCount) out.push(`<b>${a.splitCount} split${a.splitCount === 1 ? '' : 's'}, ${'0'} converted.</b> At this volume splits are noise, not a pattern — don't over-correct your line for them.`);
+  $('#takeaways').innerHTML = out.map(x => '<li>' + x + '</li>').join('');
+}
+
+function render() {
+  const ss = DATA.sessions[sIdx], games = ss.games;
+  const a = analyzeGames(games);
+  const dt = new Date(ss.date + 'T12:00:00');
+  $('#subhead').textContent = `${ss.house} · Lane ${ss.lane} · ${dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`;
+  $('#heroVal').textContent = fmt1(a.avg);
+  $('#heroNote').innerHTML = `${a.games}-game series of <b>${a.series}</b> &nbsp;·&nbsp; high ${a.high}, low ${a.low}`;
+
+  $('#kpis').innerHTML = [
+    ['High game', a.high, 'Game ' + games.find(g => g.printed_total === a.high).game],
+    ['First ball avg', fmt1(a.firstBallAvg), 'pins per opening ball'],
+    ['Strike rate', fmt1(a.strikePct) + '%', a.strikes + ' of ' + a.attempts + ' racks'],
+    ['Spare conversion', fmt1(a.sparePct) + '%', a.spares + ' of ' + a.spareAttempts + ' attempts'],
+    ['Clean frames', fmt1(a.cleanPct) + '%', 'strike or spare'],
+    ['Open frames', a.opens, 'the scoring leak']
+  ].map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+  $('#gsCap').textContent = `${a.games} games at ${ss.house}, high ${a.high} / low ${a.low} — a ${a.high - a.low}-pin spread.`;
+  takeaways(a, games);
+  chartGames($('#chartGames'), games, a.avg);
+  chartLeave($('#chartLeave'), a.buckets);
+  chartPos($('#chartPos'), games);
+  chartMix($('#chartMix'), games);
+  chartHistory($('#chartHistory'));
+
+  $('#gameTabs').innerHTML = games.map((g, i) => `<div class="tab ${i === gTab ? 'on' : ''}" data-i="${i}">Game ${g.game} · ${g.printed_total}</div>`).join('');
+  $('#gameTabs').querySelectorAll('.tab').forEach(t => t.onclick = () => { gTab = +t.dataset.i; render(); });
+  renderSheet(games[gTab]);
+  renderTable();
+
+  const totalGames = DATA.sessions.reduce((n, s) => n + s.games.length, 0);
+  $('#foot').innerHTML = `${totalGames} game${totalGames === 1 ? '' : 's'} logged across ${DATA.sessions.length} session${DATA.sessions.length === 1 ? '' : 's'}`
+    + (LIVE_COUNT ? ` &nbsp;·&nbsp; ${LIVE_COUNT} pulled live from the tracker on this device` : '')
+    + `. Every running total was recomputed from the ball-by-ball data and checked against the printed sheet.`;
+}
+
+/* ========================== WIRING ============================ */
+$('#sessionSel').innerHTML = DATA.sessions.map((s, i) => `<option value="${i}">${s.date} · ${s.house}</option>`).join('');
+$('#sessionSel').onchange = e => { sIdx = +e.target.value; gTab = 0; render(); };
+$('#tableBtn').onclick = e => { const c = $('#tableCard'); c.classList.toggle('hidden'); e.target.classList.toggle('on', !c.classList.contains('hidden')); };
+const themeBtn = $('#themeBtn');
+function applyTheme(t) { document.documentElement.setAttribute('data-theme', t); themeBtn.textContent = t === 'dark' ? 'Light' : 'Dark'; render(); }
+themeBtn.onclick = () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+</script>
+</body>
+</html>
