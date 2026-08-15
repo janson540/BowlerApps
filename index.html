@@ -317,8 +317,36 @@ let state = { session: null, gi: 0, standing: [], selected: [], ballIdx: 0, spli
    rolls to tomorrow, which is squarely inside league hours. */
 function todayLocal() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
 
-function load() { try { const r = localStorage.getItem(LS); if (r) store = JSON.parse(r); } catch (e) {} }
-function save() { try { localStorage.setItem(LS, JSON.stringify(store)); } catch (e) { toast('Storage unavailable — export before closing'); } }
+/* Data-loss guards. The old load() swallowed a parse error and left `store`
+   empty — and the next save() would then write that empty store straight over
+   recoverable data. Now a failed read latches, saves are blocked, and an empty
+   store never silently replaces a non-empty one. */
+let LOAD_FAILED = false;
+function load() {
+  let raw = null;
+  try { raw = localStorage.getItem(LS); } catch (e) { return; }
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.sessions)) store = parsed;
+    else throw new Error('unexpected shape');
+  } catch (e) {
+    LOAD_FAILED = true;
+    try { localStorage.setItem(LS + '.unreadable', raw); } catch (e2) {}
+  }
+}
+function save(force) {
+  if (LOAD_FAILED) { toast('Stored data couldn’t be read — not overwriting it'); return; }
+  try {
+    const prev = localStorage.getItem(LS);
+    if (!force && prev && store.sessions.length === 0) {
+      const p = JSON.parse(prev);
+      if (p.sessions && p.sessions.length) { toast('Refused to overwrite saved sessions with an empty set'); return; }
+    }
+    localStorage.setItem(LS, JSON.stringify(store));
+    if (prev) localStorage.setItem(LS + '.prev', prev);   // one-deep rollback
+  } catch (e) { toast('Storage unavailable — export before closing'); }
+}
 function toast(m) { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600); }
 function go(v) { document.querySelectorAll('.view').forEach(x => x.classList.remove('on')); document.getElementById(v).classList.add('on'); if (v === 'vData') renderData(); }
 const $ = s => document.getElementById(s);
@@ -556,7 +584,7 @@ function deleteSession(id) {
   if (!confirm(`Delete the ${s.date} session at ${s.house}?\n\n${done} game${done === 1 ? '' : 's'} will be permanently removed from this device.`)) return;
   store.sessions = store.sessions.filter(x => x.id !== id);
   if (state.session && state.session.id === id) { state.session = null; state.gi = 0; }
-  save(); renderData(); toast('Session deleted');
+  save(true); renderData(); toast("Session deleted");
 }
 
 function buildExport() {
