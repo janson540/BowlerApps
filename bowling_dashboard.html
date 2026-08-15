@@ -217,24 +217,37 @@
 
 <script>
 /* ============================ DATA ============================ */
-const DATA = {
+let DATA = {
   "bowler": "Janson",
-  "schema_version": 1,
-  "notes": "throws = pins knocked down per ball, in order. Frame 10 may have 3 throws. splits = 1-indexed frame numbers where a split was marked (circled) on the sheet. leaves = optional map of frame -> list of pin numbers left standing after ball 1 (from the pin diagram); populate as available.",
+  "schema_version": 2,
+  "notes": "throws = pins knocked down per ball, in order (frame 10 may have 3). splits = 1-indexed frames marked as splits. leaves = frame -> list of pin numbers left standing after that frame's opening ball; present on app-entered sessions, empty on PDF-parsed ones. Each session carries an id and a source ('app' or 'pdf'). Merge on date+house+lane; when both sources have the same session, keep whichever has more pin-level leaves.",
   "sessions": [
     {
+      "id": "s-2026-08-14-pdf01",
       "date": "2026-08-14",
       "house": "Holiday Bowl",
       "location": "Chester, VA",
       "lane": 22,
       "team": "Team 22",
       "handicap": 0,
+      "source": "pdf",
+      "source_file": "8_14_26.pdf",
       "games": [
         {
           "game": 1,
           "printed_total": 85,
           "printed_running": [5, 13, 18, 27, 46, 62, 68, 69, 76, 85],
-          "throws": [[1,4],[8,0],[5,0],[9,0],[0,10],[9,1],[6,0],[1,0],[0,7],[9,0]],
+          "throws": [
+            [1, 4],
+            [8, 0],
+            [5, 0],
+            [9, 0],
+            [0, 10],
+            [9, 1],
+            [6, 0],
+            [1, 0],
+            [0, 7],
+            [9, 0]],
           "splits": [],
           "leaves": {}
         },
@@ -242,7 +255,17 @@ const DATA = {
           "game": 2,
           "printed_total": 115,
           "printed_running": [0, 9, 29, 49, 66, 75, 93, 101, 108, 115],
-          "throws": [[0,0],[9,0],[9,1],[10],[7,3],[7,2],[10],[1,7],[4,3],[6,1]],
+          "throws": [
+            [0, 0],
+            [9, 0],
+            [9, 1],
+            [10],
+            [7, 3],
+            [7, 2],
+            [10],
+            [1, 7],
+            [4, 3],
+            [6, 1]],
           "splits": [],
           "leaves": {}
         },
@@ -250,7 +273,17 @@ const DATA = {
           "game": 3,
           "printed_total": 150,
           "printed_running": [19, 28, 46, 54, 71, 78, 85, 112, 132, 150],
-          "throws": [[10],[7,2],[6,4],[8,0],[9,1],[7,0],[1,6],[10],[10],[7,3,8]],
+          "throws": [
+            [10],
+            [7, 2],
+            [6, 4],
+            [8, 0],
+            [9, 1],
+            [7, 0],
+            [1, 6],
+            [10],
+            [10],
+            [7, 3, 8]],
           "splits": [],
           "leaves": {}
         },
@@ -258,7 +291,17 @@ const DATA = {
           "game": 4,
           "printed_total": 109,
           "printed_running": [8, 27, 36, 53, 61, 78, 85, 93, 100, 109],
-          "throws": [[7,1],[10],[9,0],[9,1],[7,1],[10],[7,0],[6,2],[7,0],[7,2]],
+          "throws": [
+            [7, 1],
+            [10],
+            [9, 0],
+            [9, 1],
+            [7, 1],
+            [10],
+            [7, 0],
+            [6, 2],
+            [7, 0],
+            [7, 2]],
           "splits": [9],
           "leaves": {}
         },
@@ -266,7 +309,17 @@ const DATA = {
           "game": 5,
           "printed_total": 122,
           "printed_running": [8, 17, 34, 43, 52, 66, 70, 87, 94, 122],
-          "throws": [[8,0],[9,0],[3,7],[7,2],[7,2],[10],[4,0],[10],[5,2],[10,10,8]],
+          "throws": [
+            [8, 0],
+            [9, 0],
+            [3, 7],
+            [7, 2],
+            [7, 2],
+            [10],
+            [4, 0],
+            [10],
+            [5, 2],
+            [10, 10, 8]],
           "splits": [1],
           "leaves": {}
         },
@@ -274,13 +327,49 @@ const DATA = {
           "game": 6,
           "printed_total": 140,
           "printed_running": [19, 28, 55, 74, 83, 97, 105, 123, 131, 140],
-          "throws": [[10],[6,3],[10],[10],[7,2],[7,3],[4,4],[10],[6,2],[9,0]],
+          "throws": [
+            [10],
+            [6, 3],
+            [10],
+            [10],
+            [7, 2],
+            [7, 3],
+            [4, 4],
+            [10],
+            [6, 2],
+            [9, 0]],
           "splits": [],
           "leaves": {}
-        }
-      ]
-    }
-  ]
+        }]
+    },
+    {
+      "id": "s-2026-08-16-TEST",
+      "date": "2026-08-16",
+      "house": "Holiday Bowl",
+      "lane": 22,
+      "source": "app",
+      "games": [
+        {
+          "game": 1,
+          "throws": [
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10, 10, 10]],
+          "splits": [],
+          "leaves": {},
+          "printed_total": 300,
+          "printed_running": [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
+        }],
+      "test": true,
+      "note": "Synthetic 300 used to verify the sweep pipeline. Safe to delete."
+    }]
 };
 
 /* ========================== ENGINE ============================ */
@@ -425,7 +514,7 @@ function mergeSessions(existing, incoming) {
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 let LIVE_COUNT = 0;
-(function hydrate() {
+function hydrateLocal() {
   let live = [];
   try {
     const raw = window.localStorage && localStorage.getItem('bowlingTracker.v1');
@@ -436,10 +525,24 @@ let LIVE_COUNT = 0;
     .map(s => Object.assign({}, s, { games: (s.games || []).filter(g => g.printed_total != null && g.throws && g.throws.length === 10) }))
     .filter(s => s.games.length);
   if (!clean.length) return;
-  const before = DATA.sessions.length;
   DATA.sessions = mergeSessions(DATA.sessions, clean);
   LIVE_COUNT = clean.reduce((n, s) => n + s.games.length, 0);
-})();
+}
+
+/* Shared record, fetched at runtime. The copy baked into this file is only a
+   fallback for when the page is opened straight off disk (file:// blocks fetch)
+   or the network is down. Because it's fetched, updating the record on every
+   device is a matter of committing bowling_data.json — no HTML redeploy, no
+   per-device import. */
+let DATA_SOURCE = 'embedded';
+async function loadRemote() {
+  try {
+    const r = await fetch('bowling_data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j && Array.isArray(j.sessions) && j.sessions.length) { DATA = j; DATA_SOURCE = 'repo'; }
+  } catch (e) { /* offline or file:// — embedded fallback stands */ }
+}
 
 /* ========================== HELPERS =========================== */
 const $ = s => document.querySelector(s);
@@ -743,18 +846,28 @@ function render() {
 
   const totalGames = DATA.sessions.reduce((n, s) => n + s.games.length, 0);
   $('#foot').innerHTML = `${totalGames} game${totalGames === 1 ? '' : 's'} logged across ${DATA.sessions.length} session${DATA.sessions.length === 1 ? '' : 's'}`
-    + (LIVE_COUNT ? ` &nbsp;·&nbsp; ${LIVE_COUNT} pulled live from the tracker on this device` : '')
-    + `. Every running total was recomputed from the ball-by-ball data and checked against the printed sheet.`;
+    + (LIVE_COUNT ? ` &nbsp;·&nbsp; ${LIVE_COUNT} live from the tracker on this device` : '')
+    + `. Shared record: ${DATA_SOURCE === 'repo' ? 'fetched from bowling_data.json' : 'built into this page (offline fallback)'}.`
+    + ` Every running total was recomputed from the ball-by-ball data and checked against the printed sheet.`;
 }
 
 /* ========================== WIRING ============================ */
-$('#sessionSel').innerHTML = DATA.sessions.map((s, i) => `<option value="${i}">${s.date} · ${s.house}</option>`).join('');
-$('#sessionSel').onchange = e => { sIdx = +e.target.value; gTab = 0; render(); };
-$('#tableBtn').onclick = e => { const c = $('#tableCard'); c.classList.toggle('hidden'); e.target.classList.toggle('on', !c.classList.contains('hidden')); };
 const themeBtn = $('#themeBtn');
 function applyTheme(t) { document.documentElement.setAttribute('data-theme', t); themeBtn.textContent = t === 'dark' ? 'Light' : 'Dark'; render(); }
-themeBtn.onclick = () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
-applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+async function boot() {
+  await loadRemote();          // shared record first
+  hydrateLocal();              // then anything logged on this device
+  DATA.sessions.sort((a, b) => a.date.localeCompare(b.date));
+  sIdx = DATA.sessions.length - 1;   // open on the most recent session
+  $('#sessionSel').innerHTML = DATA.sessions.map((s, i) => `<option value="${i}">${s.date} · ${s.house}</option>`).join('');
+  $('#sessionSel').value = sIdx;
+  $('#sessionSel').onchange = e => { sIdx = +e.target.value; gTab = 0; render(); };
+  $('#tableBtn').onclick = e => { const c = $('#tableCard'); c.classList.toggle('hidden'); e.target.classList.toggle('on', !c.classList.contains('hidden')); };
+  themeBtn.onclick = () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  applyTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+}
+boot();
 </script>
 </body>
 </html>
