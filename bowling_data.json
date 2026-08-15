@@ -1,0 +1,154 @@
+{
+  "bowler": "Janson",
+  "schema_version": 2,
+  "notes": "throws = pins knocked down per ball, in order (frame 10 may have 3). splits = 1-indexed frames marked as splits. leaves = frame -> list of pin numbers left standing after that frame's opening ball; present on app-entered sessions, empty on PDF-parsed ones. Each session carries an id and a source ('app' or 'pdf'). Merge on date+house+lane; when both sources have the same session, keep whichever has more pin-level leaves.",
+  "sessions": [
+    {
+      "id": "s-2026-08-14-pdf01",
+      "date": "2026-08-14",
+      "house": "Holiday Bowl",
+      "location": "Chester, VA",
+      "lane": 22,
+      "team": "Team 22",
+      "handicap": 0,
+      "source": "pdf",
+      "source_file": "8_14_26.pdf",
+      "games": [
+        {
+          "game": 1,
+          "printed_total": 85,
+          "printed_running": [5, 13, 18, 27, 46, 62, 68, 69, 76, 85],
+          "throws": [
+            [1, 4],
+            [8, 0],
+            [5, 0],
+            [9, 0],
+            [0, 10],
+            [9, 1],
+            [6, 0],
+            [1, 0],
+            [0, 7],
+            [9, 0]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 2,
+          "printed_total": 115,
+          "printed_running": [0, 9, 29, 49, 66, 75, 93, 101, 108, 115],
+          "throws": [
+            [0, 0],
+            [9, 0],
+            [9, 1],
+            [10],
+            [7, 3],
+            [7, 2],
+            [10],
+            [1, 7],
+            [4, 3],
+            [6, 1]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 3,
+          "printed_total": 150,
+          "printed_running": [19, 28, 46, 54, 71, 78, 85, 112, 132, 150],
+          "throws": [
+            [10],
+            [7, 2],
+            [6, 4],
+            [8, 0],
+            [9, 1],
+            [7, 0],
+            [1, 6],
+            [10],
+            [10],
+            [7, 3, 8]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 4,
+          "printed_total": 109,
+          "printed_running": [8, 27, 36, 53, 61, 78, 85, 93, 100, 109],
+          "throws": [
+            [7, 1],
+            [10],
+            [9, 0],
+            [9, 1],
+            [7, 1],
+            [10],
+            [7, 0],
+            [6, 2],
+            [7, 0],
+            [7, 2]],
+          "splits": [9],
+          "leaves": {}
+        },
+        {
+          "game": 5,
+          "printed_total": 122,
+          "printed_running": [8, 17, 34, 43, 52, 66, 70, 87, 94, 122],
+          "throws": [
+            [8, 0],
+            [9, 0],
+            [3, 7],
+            [7, 2],
+            [7, 2],
+            [10],
+            [4, 0],
+            [10],
+            [5, 2],
+            [10, 10, 8]],
+          "splits": [1],
+          "leaves": {}
+        },
+        {
+          "game": 6,
+          "printed_total": 140,
+          "printed_running": [19, 28, 55, 74, 83, 97, 105, 123, 131, 140],
+          "throws": [
+            [10],
+            [6, 3],
+            [10],
+            [10],
+            [7, 2],
+            [7, 3],
+            [4, 4],
+            [10],
+            [6, 2],
+            [9, 0]],
+          "splits": [],
+          "leaves": {}
+        }]
+    },
+    {
+      "id": "s-2026-08-15-1sio2",
+      "date": "2026-08-15",
+      "house": "Bowlero",
+      "lane": 28,
+      "source": "app",
+      "games": [
+        {
+          "game": 1,
+          "throws": [
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10],
+            [10, 10, 10]],
+          "splits": [],
+          "leaves": {},
+          "printed_total": 300,
+          "printed_running": [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
+        }],
+      "test": true,
+      "note": "Synthetic test game. Safe to delete."
+    }]
+}
