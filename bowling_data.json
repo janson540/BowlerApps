@@ -122,33 +122,5 @@
           "splits": [],
           "leaves": {}
         }]
-    },
-    {
-      "id": "s-2026-08-15-1sio2",
-      "date": "2026-08-15",
-      "house": "Bowlero",
-      "lane": 28,
-      "source": "app",
-      "games": [
-        {
-          "game": 1,
-          "throws": [
-            [10],
-            [10],
-            [10],
-            [10],
-            [10],
-            [10],
-            [10],
-            [10],
-            [10],
-            [10, 10, 10]],
-          "splits": [],
-          "leaves": {},
-          "printed_total": 300,
-          "printed_running": [30, 60, 90, 120, 150, 180, 210, 240, 270, 300]
-        }],
-      "test": true,
-      "note": "Synthetic test game. Safe to delete."
     }]
 }
