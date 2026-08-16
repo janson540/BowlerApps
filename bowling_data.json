@@ -1,7 +1,7 @@
 {
   "bowler": "Janson",
   "schema_version": 2,
-  "notes": "throws = pins knocked down per ball, in order (frame 10 may have 3). splits = 1-indexed frames marked as splits. leaves = frame -> list of pin numbers left standing after that frame's opening ball; present on app-entered sessions, empty on PDF-parsed ones. Each session carries an id and a source ('app' or 'pdf'). Merge on date+house+lane; when both sources have the same session, keep whichever has more pin-level leaves.",
+  "notes": "throws = pins knocked down per ball, in order (frame 10 may have 3). splits = 1-indexed frames marked as splits. leaves = frame -> list of pin numbers left standing after that frame's opening ball; present on app-entered sessions, empty on PDF-parsed ones. Each session carries an id and a source ('app' or 'pdf'). Merge on date+house+lane; when both sources have the same session, keep whichever has more pin-level leaves. Sessions may carry a 'technique' field describing release changes — trend analysis must not blend sessions across a mechanical change without flagging it.",
   "sessions": [
     {
       "id": "s-2026-08-14-pdf01",
@@ -121,7 +121,11 @@
             [9, 0]],
           "splits": [],
           "leaves": {}
-        }]
+        }],
+      "technique": {
+        "release": "baseline",
+        "detail": "Pre-change baseline. Release not consciously managed."
+      }
     },
     {
       "id": "s-2026-08-15-pdf01",
@@ -187,7 +191,11 @@
             [9, 0]],
           "splits": [],
           "leaves": {}
-        }]
+        }],
+      "technique": {
+        "release": "topping the ball",
+        "detail": "Hand riding over the top of the ball, spinning it. Associated with ring finger pain."
+      }
     },
     {
       "id": "s-2026-08-16-pdf01",
@@ -290,6 +298,10 @@
             [8, 0]],
           "splits": [2, 10],
           "leaves": {}
-        }]
+        }],
+      "technique": {
+        "release": "behind the ball",
+        "detail": "Deliberate change: staying behind the ball, lifting the hand up after thumb exit. First session with the new release."
+      }
     }]
 }
