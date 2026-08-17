@@ -303,5 +303,136 @@
         "release": "behind the ball",
         "detail": "Deliberate change: staying behind the ball, lifting the hand up after thumb exit. First session with the new release."
       }
+    },
+    {
+      "id": "s-2026-08-17-pdf01",
+      "date": "2026-08-17",
+      "house": "Holiday Bowl",
+      "location": "Chester, VA",
+      "lane": 22,
+      "team": "Team 22",
+      "handicap": 0,
+      "source": "pdf",
+      "source_file": "8_17_26.pdf",
+      "note": "7 games bowled. Game 1 (86) was a throwaway spent experimenting with the release and is EXCLUDED from this record at the bowler's direction. Games below keep their original printout numbering (2-7).",
+      "excluded_games": [
+        {
+          "game": 1,
+          "printed_total": 86,
+          "reason": "release experimentation, not representative"
+        }],
+      "technique": {
+        "release": "behind the ball",
+        "detail": "Second session with the new release. Game 1 spent deliberately experimenting, then settled."
+      },
+      "games": [
+        {
+          "game": 2,
+          "printed_total": 113,
+          "printed_running": [5, 11, 20, 40, 65, 81, 87, 96, 105, 113],
+          "throws": [
+            [5, 0],
+            [6, 0],
+            [7, 2],
+            [9, 1],
+            [10],
+            [10],
+            [5, 1],
+            [8, 1],
+            [7, 2],
+            [3, 5]],
+          "splits": [8],
+          "leaves": {}
+        },
+        {
+          "game": 3,
+          "printed_total": 95,
+          "printed_running": [9, 16, 31, 40, 48, 56, 65, 72, 88, 95],
+          "throws": [
+            [9, 0],
+            [7, 0],
+            [8, 2],
+            [5, 4],
+            [0, 8],
+            [0, 8],
+            [9, 0],
+            [7, 0],
+            [0, 10],
+            [6, 1]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 4,
+          "printed_total": 125,
+          "printed_running": [16, 24, 44, 63, 72, 80, 88, 97, 105, 125],
+          "throws": [
+            [7, 3],
+            [6, 2],
+            [9, 1],
+            [10],
+            [7, 2],
+            [7, 1],
+            [8, 0],
+            [6, 3],
+            [8, 0],
+            [10, 7, 3]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 5,
+          "printed_total": 206,
+          "printed_running": [18, 26, 46, 66, 96, 126, 155, 175, 192, 206],
+          "throws": [
+            [10],
+            [8, 0],
+            [10],
+            [7, 3],
+            [10],
+            [10],
+            [10],
+            [10],
+            [9, 1],
+            [7, 3, 4]],
+          "splits": [2],
+          "leaves": {}
+        },
+        {
+          "game": 6,
+          "printed_total": 119,
+          "printed_running": [9, 27, 46, 55, 63, 72, 85, 94, 110, 119],
+          "throws": [
+            [9, 0],
+            [9, 1],
+            [8, 2],
+            [9, 0],
+            [7, 1],
+            [9, 0],
+            [8, 2],
+            [3, 6],
+            [9, 1],
+            [6, 3]],
+          "splits": [],
+          "leaves": {}
+        },
+        {
+          "game": 7,
+          "printed_total": 161,
+          "printed_running": [20, 39, 48, 56, 82, 102, 121, 135, 143, 161],
+          "throws": [
+            [8, 2],
+            [10],
+            [9, 0],
+            [8, 0],
+            [10],
+            [10],
+            [6, 4],
+            [9, 1],
+            [4, 4],
+            [9, 1, 8]],
+          "splits": [4],
+          "leaves": {}
+        }]
     }]
 }
